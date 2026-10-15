@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Registro de alumnos - Versión 2 </title>
+  <title>CineRenta</title>
   <link rel="stylesheet" href="{{ url_for('static',
 filename='bootstrap/css/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}">
@@ -14,7 +14,7 @@ filename='bootstrap/css/bootstrap.min.css') }}">
   <nav class="navbar navbar-expand-lg bg-dark" data-bs-theme="dark" aria-label="Menú principal">
     <div class="container">
       <a class="navbar-brand" href="{{ url_for('inicio') }}">
-        5APV
+        CineRenta
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuPrincipal"
         aria-controls="menuPrincipal" aria-expanded="false" aria-label="Abrir o cerrar menú">
@@ -31,7 +31,7 @@ filename='bootstrap/css/bootstrap.min.css') }}">
             <a class="nav-link" href="{{ url_for('inicio') }}#registro">Registrar</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('inicio') }}#lista">Lista de alumnos</a>
+            <a class="nav-link" href="{{ url_for('inicio') }}#lista">Catálogo</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('ayuda') }}">Ayuda</a>
@@ -43,10 +43,10 @@ filename='bootstrap/css/bootstrap.min.css') }}">
   <main class="container py-4">
     <header class="mb-4">
       <p class="text-uppercase text-secondary small mb-1">
-        Aplicaciones Web · Práctica 03
+        Mi proyecto · CineRenta
       </p>
-      <h1 class="h2">Registro de alumnos -Version 2 </h1>
-      <p class="text-secondary">Consulta y organiza los datos del grupo.</p>
+      <h1 class="h2">Catálogo de películas</h1>
+      <p class="text-secondary">Administra el Catálogo de peliculas para renta.</p>
     </header>
     {% block contenido %}{% endblock %}
   </main>
