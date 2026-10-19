@@ -1,42 +1,59 @@
-{% extends 'base.html' %}
-{% block contenido %}
+{% extends "base.html" %}
+{% block title %}Editar película · CineRenta{% endblock %}
+
+{% block content %}
 <div class="row justify-content-center">
-  <div class="col-lg-8">
-    <section class="card shadow-sm">
-      <div class="card-body p-4">
-        <h2 class="h4 mb-3">Editar pelicula</h2>
-        <form method="post" action="{{ url_for('editar', id=alumno._id) }}">
-          <div class="mb-3">
-            <label for="nombre" class="form-label">Película</label>
-            <input id="nombre" name="nombre" class="form-control"    
-                   value="{{ alumno.nombre }}" required maxlength="80"> 
-          </div>
-          <div class="mb-3">
-            <label for="categoria" class="form-label">Género</label>  
-            <input id="categoria" name="categoria" class="form-control" 
-                   value="{{ alumno.categoria }}" required maxlength="20">
-          </div>
-          <div class="mb-3">
-            <label for="estado" class="form-label">Estado</label>  
-            <select id="estado" name="estado" class="form-select" required> 
-              <option value="">Selecciona</option>
-              {% for opcion in ['Disponible', 'Prestado'] %} 
-              <option value="{{ opcion }}" 
-                {% if alumno.get ('estado') == opcion %}selected{% endif %}>
-                {{ opcion }}
-              </option>
-              {% endfor %}  
-            </select> 
-          </div>
-          <div class="d-flex gap-2 flex-wrap">
-            <button type="submit" class="btn btn-primary">
-              Guardar cambios
-            </button>
-            <a class="btn btn-outline-secondary" href="{{ url_for('inicio') }}#lista">Cancelar</a>
-          </div>
+    <div class="col-lg-8">
+        <h1 class="fw-bold mb-4">Editar película</h1>
+        
+        <form method="post" class="card bg-black border-secondary p-4">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="nombre" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ pelicula.nombre }}" required maxlength="80">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Año</label>
+                    <input type="number" name="anio" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ pelicula.anio }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Género</label>
+                    <input type="text" name="genero" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ pelicula.genero }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Precio</label>
+                    <input type="number" name="precio" step="0.01" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ pelicula.precio }}" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Estado</label>
+                    <select name="estado" class="form-select bg-dark text-light border-secondary" required>
+                        {% for opcion in ['Disponible', 'Alquilada'] %}
+                        <option value="{{ opcion }}" {% if pelicula.estado == opcion %}selected{% endif %}>
+                            {{ opcion }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">URL de la imagen</label>
+                    <input type="url" name="imagen" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ pelicula.imagen }}" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="descripcion" class="form-control bg-dark text-light border-secondary" rows="3" required>{{ pelicula.descripcion }}</textarea>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-cine">Guardar cambios</button>
+                <a href="{{ url_for('inicio') }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
         </form>
-      </div>
-    </section>
-  </div>
+    </div>
 </div>
 {% endblock %}

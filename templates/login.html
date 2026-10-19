@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión · CineRenta{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card bg-black border-secondary">
+            <div class="card-body p-4">
+                <h2 class="card-title text-center mb-4">Iniciar sesión</h2>
+                
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Correo electrónico</label>
+                        <input type="email" name="email" class="form-control bg-dark text-light border-secondary" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" name="password" class="form-control bg-dark text-light border-secondary" required>
+                    </div>
+                    <button type="submit" class="btn btn-cine w-100">Entrar</button>
+                </form>
+                
+                <p class="text-center mt-3 mb-0">
+                    ¿No tienes cuenta? <a href="{{ url_for('registro') }}" class="text-danger">Regístrate</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

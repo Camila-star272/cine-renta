@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Carrito · CineRenta{% endblock %}
+
+{% block content %}
+<h1 class="fw-bold mb-4">Mi Carrito</h1>
+
+{% if items %}
+<div class="table-responsive">
+    <table class="table table-dark table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Película</th>
+                <th>Precio</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="{{ item.imagen }}" alt="" width="60" height="90" style="object-fit: cover;"
+                             onerror="this.src='https://via.placeholder.com/60x90'">
+                        <div>
+                            <strong>{{ item.nombre }}</strong><br>
+                            <small class="text-secondary">{{ item.genero }}</small>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-danger fw-bold">${{ "%.2f"|format(item.get('precio',0)) }}</td>
+                <td>
+                    <a href="{{ url_for('carrito_quitar', id=item._id) }}" class="btn btn-sm btn-outline-danger">Quitar</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td class="text-end fw-bold">Total:</td>
+                <td class="text-danger fs-4 fw-bold">${{ "%.2f"|format(total) }}</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<div class="d-flex gap-2 justify-content-end mt-4">
+    <a href="{{ url_for('carrito_vaciar') }}" class="btn btn-outline-secondary">Vaciar carrito</a>
+    <form action="{{ url_for('checkout') }}" method="post">
+        <button type="submit" class="btn btn-cine btn-lg">Finalizar y pagar</button>
+    </form>
+</div>
+{% else %}
+    <div class="text-center py-5">
+        <h3 class="text-secondary">Tu carrito está vacío</h3>
+        <a href="{{ url_for('inicio') }}" class="btn btn-cine mt-3">Ver catálogo</a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Mis Pedidos · CineRenta{% endblock %}
+
+{% block content %}
+<h1 class="fw-bold mb-4">Mis Pedidos</h1>
+
+{% if pedidos and pedidos|length > 0 %}
+    {% for pedido in pedidos %}
+    <div class="card bg-black border-secondary mb-3">
+        <div class="card-header d-flex justify-content-between">
+            <span>Pedido #{{ pedido._id }}</span>
+            <span class="text-secondary">
+                {% if pedido.fecha %}
+                    {{ pedido.fecha.strftime('%d/%m/%Y %H:%M') }}
+                {% else %}
+                    Sin fecha
+                {% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                {% for item in pedido ['items'] %}
+                <li class="list-group-item bg-black text-light d-flex justify-content-between">
+                    <span>{{ item.nombre }}</span>
+                    <span class="text-danger">${{ "%.2f"|format(item.precio) }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="text-end mt-3">
+                <strong>Total: </strong>
+                <span class="text-danger fs-4 fw-bold">${{ "%.2f"|format(pedido.total) }}</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="text-center py-5">
+        <h3 class="text-secondary">Aún no tienes pedidos</h3>
+        <a href="{{ url_for('inicio') }}" class="btn btn-cine mt-3">Ir al catálogo</a>
+    </div>
+{% endif %}
+{% endblock %}

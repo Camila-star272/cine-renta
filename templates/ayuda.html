@@ -1,22 +1,91 @@
-{% extends 'base.html' %}
-{% block contenido %}
-<section class="card shadow-sm">
-    <div class="card-body p-4">
-        <h2 class="h4">Ayuda de CineRenta</h2>
-        <p class="text-secondary">Fecha del equipo: {{ fecha }}</p>
-        <div class="alert alert-info" role="note">
-            Utiliza datos ficticios durante la práctica.
+{% extends "base.html" %}
+{% block title %}Ayuda · CineRenta{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <h1 class="fw-bold mb-2">Ayuda de CineRenta</h1>
+        <p class="text-secondary mb-4">Guía rápida para usar la plataforma · {{ fecha }}</p>
+
+        <!-- 1. Catálogo -->
+        <div class="card bg-black border-secondary mb-4">
+            <div class="card-body">
+                <h4 class="text-danger mb-3">1. Catálogo de películas</h4>
+                <ul>
+                    <li>En la página principal verás todas las películas disponibles.</li>
+                    <li>Cada tarjeta muestra: imagen, nombre, género, año, precio y estado.</li>
+                    <li>El estado puede ser <span class="badge bg-success">Disponible</span> o <span class="badge bg-secondary">Alquilada</span>.</li>
+                </ul>
+            </div>
         </div>
-        <ol class="mb-4">
-            <li>En Registrar, escribie pelicula, genéro y estado.</li>
-            <li>Presiona Guardar pelicula y consulta la lista.</li>
-            <li>Usa Editar para corregir los datos de una pelicula.</li>
-            <li>Usa Eliminar solo con tus registros de prueba.</li>
-            <li>En pantalla pequeña, abre el menú con su botón.</li>
-        </ol>
-        <a class="btn btn-primary" href="{{ url_for('inicio') }}">
-            Volver al registro
-        </a>
+
+        <!-- 2. Registro e inicio de sesión -->
+        <div class="card bg-black border-secondary mb-4">
+            <div class="card-body">
+                <h4 class="text-danger mb-3">2. Crear una cuenta e iniciar sesión</h4>
+                <ul>
+                    <li>Haz clic en <strong>Registrarse</strong> para crear una cuenta nueva.</li>
+                    <li>Completa nombre, correo y contraseña.</li>
+                    <li>Después inicia sesión con tu correo y contraseña.</li>
+                    <li>Solo los usuarios registrados pueden agregar películas al carrito y realizar pedidos.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 3. Carrito -->
+        <div class="card bg-black border-secondary mb-4">
+            <div class="card-body">
+                <h4 class="text-danger mb-3">3. Carrito de compras</h4>
+                <ul>
+                    <li>Cuando una película esté <strong>Disponible</strong>, aparecerá el botón <strong>Agregar al carrito</strong>.</li>
+                    <li>Puedes agregar varias películas.</li>
+                    <li>En la sección <strong>Carrito</strong> verás el resumen y el total.</li>
+                    <li>Puedes quitar películas individuales o vaciar todo el carrito.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 4. Pedidos -->
+        <div class="card bg-black border-secondary mb-4">
+            <div class="card-body">
+                <h4 class="text-danger mb-3">4. Realizar un pedido (cobro)</h4>
+                <ul>
+                    <li>Desde el carrito haz clic en <strong>Finalizar y pagar</strong>.</li>
+                    <li>El sistema creará el pedido y marcará las películas como <strong>Alquiladas</strong>.</li>
+                    <li>Se vaciará automáticamente el carrito.</li>
+                    <li>Podrás ver todos tus pedidos en la sección <strong>Mis Pedidos</strong>.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 5. Administración (solo admin) -->
+        <div class="card bg-black border-secondary mb-4">
+            <div class="card-body">
+                <h4 class="text-danger mb-3">5. Administración de películas (solo Administrador)</h4>
+                <ul>
+                    <li>Solo el usuario con rol <strong>admin</strong> puede agregar, editar y eliminar películas.</li>
+                    <li>El enlace <strong>+ Agregar película</strong> solo aparece si eres administrador.</li>
+                    <li>Los botones de Editar y Eliminar también solo se muestran al administrador.</li>
+                    <li>Al agregar una película debes indicar: nombre, género, año, precio, estado, URL de la imagen y descripción.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 6. Consejos -->
+        <div class="card bg-black border-secondary mb-4">
+            <div class="card-body">
+                <h4 class="text-danger mb-3">6. Consejos importantes</h4>
+                <ul>
+                    <li>Este es un proyecto académico. El cobro es <strong>simulado</strong> (no se realiza un pago real).</li>
+                    <li>Usa solo información e imágenes ficticias o de uso libre.</li>
+                    <li>Si una película aparece como “Alquilada”, no se puede volver a agregar al carrito hasta que el administrador cambie su estado.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="{{ url_for('inicio') }}" class="btn btn-cine">Volver al catálogo</a>
+        </div>
     </div>
-</section>
+</div>
 {% endblock %}
