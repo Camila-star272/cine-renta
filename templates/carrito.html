@@ -46,9 +46,7 @@
 
 <div class="d-flex gap-2 justify-content-end mt-4">
     <a href="{{ url_for('carrito_vaciar') }}" class="btn btn-outline-secondary">Vaciar carrito</a>
-    <form action="{{ url_for('checkout') }}" method="post">
-        <button type="submit" class="btn btn-cine btn-lg">Finalizar y pagar</button>
-    </form>
+    <a href="{{ url_for('checkout') }}" class="btn btn-cine btn-lg">Finalizar y pagar</a>
 </div>
 {% else %}
     <div class="text-center py-5">

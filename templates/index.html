@@ -11,11 +11,17 @@
     {% for p in peliculas %}
     <div class="col">
         <div class="card card-pelicula h-100">
-            <img src="{{ p.imagen }}" class="card-img-top" alt="{{ p.nombre }}"
-                 style="height: 340px; object-fit: cover;"
-                 onerror="this.src='https://via.placeholder.com/300x450?text=Sin+imagen'">
+            <a href="{{ url_for('detalle_pelicula', id=p._id) }}">
+                <img src="{{ p.imagen }}" class="card-img-top" alt="{{ p.nombre }}"
+                     style="height: 340px; object-fit: cover;"
+                     onerror="this.src='https://via.placeholder.com/300x450?text=Sin+imagen'">
+            </a>
             <div class="card-body d-flex flex-column">
-                <h5 class="card-title text-white fw-bold">{{ p.nombre }}</h5>
+                <h5 class="card-title text-white fw-bold">
+                    <a href="{{ url_for('detalle_pelicula', id=p._id) }}" class="text-white text-decoration-none">
+                        {{ p.nombre }}
+                    </a>
+                </h5>
                 <p class="card-text text-secondary small mb-1">
                     {{ p.genero }} · {{ p.anio }}
                 </p>

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Finalizar compra · CineRenta{% endblock %}
+
+{% block content %}
+<h1 class="fw-bold mb-4">Finalizar y pagar</h1>
+
+<div class="row">
+    <div class="col-md-7">
+        <div class="card bg-black border-secondary p-4">
+            <h4 class="mb-3">Datos del cliente</h4>
+            <form method="post">
+                <div class="mb-3">
+                    <label class="form-label">Nombre completo</label>
+                    <input type="text" name="nombre_cliente" class="form-control bg-dark text-light border-secondary" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Correo electrónico</label>
+                    <input type="email" name="email_cliente" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ current_user.email if current_user.is_authenticated else '' }}" required>
+                    <div class="form-text text-secondary">Aquí se enviará la película</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Número de tarjeta</label>
+                    <input type="text" name="tarjeta" class="form-control bg-dark text-light border-secondary" 
+                           placeholder="ACCT-000015" required maxlength="19">
+                    <div class="form-text text-secondary">Pago simulado (no se realiza cobro real)</div>
+                </div>
+                <button type="submit" class="btn btn-cine btn-lg w-100">Confirmar pago</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card bg-black border-secondary p-4">
+            <h5 class="mb-3">Resumen del pedido</h5>
+            <ul class="list-group list-group-flush mb-3">
+                {% for item in items %}
+                <li class="list-group-item bg-black text-light d-flex justify-content-between">
+                    <span>{{ item.nombre }}</span>
+                    <span class="text-danger">${{ "%.2f"|format(item.precio) }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="d-flex justify-content-between fs-4">
+                <strong>Total</strong>
+                <strong class="text-danger">${{ "%.2f"|format(total) }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

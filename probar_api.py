@@ -28,7 +28,9 @@ producto = pedir(
     "/api/peliculas",
     {"nombre": "Prueba API", "categoria": "Drama", "estado": "Disponible"},
 )
-ruta = "/api/peliculas/" + producto["id"]
+print("Lo que regresó el POST:", producto)  # te debe salir un dict, no una lista
+
+ruta = f"/api/peliculas/{producto['id']}"  # usa f-string, no +
 pedir("GET", ruta)
 pedir("PUT", ruta, {"nombre": "Prueba API", "categoria": "Drama", "estado": "Prestado"})
 pedir("GET", "/api/peliculas")

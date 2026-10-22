@@ -44,6 +44,12 @@
                            value="{{ pelicula.imagen }}" required>
                 </div>
                 <div class="col-12">
+                    <label class="form-label">URL del tráiler (YouTube)</label>
+                    <input type="url" name="trailer" class="form-control bg-dark text-light border-secondary" 
+                           value="{{ pelicula.trailer or '' }}"
+                           placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div class="col-12">
                     <label class="form-label">Descripción</label>
                     <textarea name="descripcion" class="form-control bg-dark text-light border-secondary" rows="3" required>{{ pelicula.descripcion }}</textarea>
                 </div>

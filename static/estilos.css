@@ -1,11 +1,75 @@
 body {
-    background-color: #0d0d0d;
+    background-color: #0d0d0d !important;
+    color: #f0f0f0;
     min-height: 100vh;
 }
 
+/* ===== Etiquetas de formularios (Nombre, Año, etc.) ===== */
+.form-label {
+    color: #e8e8e8 !important;
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+}
+
+/* Texto secundario más claro */
+.text-secondary {
+    color: #cfcfcf !important;
+}
+
+.text-white-50 {
+    color: #d0d0d0 !important;
+}
+
+/* Títulos de tarjetas */
+.card-title {
+    color: #ffffff !important;
+}
+
+/* Cards */
+.card {
+    background-color: #1a1a1a !important;
+    border-color: #333 !important;
+}
+
+.card-body {
+    color: #e8e8e8;
+}
+
+/* Inputs y selects */
+.form-control, .form-select {
+    background-color: #2a2a2a !important;
+    border-color: #555 !important;
+    color: #ffffff !important;
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: #2a2a2a !important;
+    border-color: #e50914 !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25) !important;
+}
+
+.form-control::placeholder {
+    color: #999 !important;
+}
+
+/* Botón rojo */
+.btn-cine {
+    background-color: #e50914 !important;
+    border: none;
+    color: white !important;
+    font-weight: 600;
+}
+
+.btn-cine:hover {
+    background-color: #b20710 !important;
+    color: white !important;
+}
+
+/* Tarjetas de películas */
 .card-pelicula {
     background-color: #1a1a1a;
-    border: 1px solid #bba7a7;
+    border: 1px solid #333;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -14,28 +78,7 @@ body {
     box-shadow: 0 12px 30px rgba(229, 9, 20, 0.25);
 }
 
-.btn-cine {
-    background-color: #e50914;
-    border: none;
-    color: white;
-    font-weight: 600;
-}
-
-.btn-cine:hover {
-    background-color: #b20710;
-    color: white;
-}
-
-.form-control:focus, .form-select:focus {
-    border-color: #e50914;
-    box-shadow: 0 0 0 0.2rem rgba(229, 9, 20, 0.25);
-}
-
-/* ===== Texto más legible ===== */
-.text-secondary {
-    color: #f0ebeb !important;
-}
-
-.card-body ul {
-    color: #d0d0d0;
+/* Texto de ayuda debajo de los inputs */
+.form-text {
+    color: #aaaaaa !important;
 }

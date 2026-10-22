@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ pelicula.nombre }} · CineRenta{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <img src="{{ pelicula.imagen }}" class="img-fluid rounded shadow" 
+             alt="{{ pelicula.nombre }}"
+             onerror="this.src='https://via.placeholder.com/300x450?text=Sin+imagen'">
+    </div>
+    <div class="col-md-8">
+        <h1 class="fw-bold text-white">{{ pelicula.nombre }}</h1>
+        <p class="text-secondary">{{ pelicula.genero }} · {{ pelicula.anio }}</p>
+        <p class="fs-4 text-danger fw-bold">${{ "%.2f"|format(pelicula.precio) }}</p>
+        
+        <span class="badge mb-3 {% if pelicula.estado == 'Disponible' %}bg-success{% else %}bg-secondary{% endif %}">
+            {{ pelicula.estado }}
+        </span>
+
+        <h4 class="mt-4 text-white">Sinopsis</h4>
+        <p class="text-light">{{ pelicula.descripcion }}</p>
+
+        {% if current_user.is_authenticated and pelicula.estado == 'Disponible' %}
+            <a href="{{ url_for('carrito_agregar', id=pelicula._id) }}" class="btn btn-cine btn-lg mt-3">
+                Agregar al carrito
+            </a>
+        {% endif %}
+        <a href="{{ url_for('inicio') }}" class="btn btn-outline-light mt-3 ms-2">Volver al catálogo</a>
+    </div>
+</div>
+
+{% if pelicula.trailer %}
+<div class="mt-5">
+    <h3 class="text-white mb-3">Tráiler</h3>
+    <div class="ratio ratio-16x9">
+        {% set video_id = pelicula.trailer.split('v=')[-1].split('&')[0] if 'v=' in pelicula.trailer else pelicula.trailer.split('/')[-1] %}
+        <iframe src="https://www.youtube.com/embed/{{ video_id }}" 
+                title="Tráiler" allowfullscreen></iframe>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

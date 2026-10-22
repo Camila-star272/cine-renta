@@ -7,7 +7,7 @@
 {% if pedidos and pedidos|length > 0 %}
     {% for pedido in pedidos %}
     <div class="card bg-black border-secondary mb-3">
-        <div class="card-header d-flex justify-content-between">
+        <div class="card-header d-flex justify-content-between align-items-center">
             <span>Pedido #{{ pedido._id }}</span>
             <span class="text-secondary">
                 {% if pedido.fecha %}
@@ -18,14 +18,29 @@
             </span>
         </div>
         <div class="card-body">
+            <!-- Datos del cliente -->
+            <div class="mb-3 small text-secondary">
+                {% if pedido.cliente_nombre %}
+                    <div><strong class="text-white">Cliente:</strong> {{ pedido.cliente_nombre }}</div>
+                {% endif %}
+                {% if pedido.cliente_email %}
+                    <div><strong class="text-white">Correo:</strong> {{ pedido.cliente_email }}</div>
+                {% endif %}
+                {% if pedido.tarjeta_ultimos4 %}
+                    <div><strong class="text-white">Tarjeta:</strong> **** **** **** {{ pedido.tarjeta_ultimos4 }}</div>
+                {% endif %}
+            </div>
+
+            <!-- Lista de películas -->
             <ul class="list-group list-group-flush">
-                {% for item in pedido ['items'] %}
+                {% for item in pedido['items'] %}
                 <li class="list-group-item bg-black text-light d-flex justify-content-between">
                     <span>{{ item.nombre }}</span>
                     <span class="text-danger">${{ "%.2f"|format(item.precio) }}</span>
                 </li>
                 {% endfor %}
             </ul>
+
             <div class="text-end mt-3">
                 <strong>Total: </strong>
                 <span class="text-danger fs-4 fw-bold">${{ "%.2f"|format(pedido.total) }}</span>

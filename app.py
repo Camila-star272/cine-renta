@@ -21,6 +21,7 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 from datetime import datetime
 import os
 
@@ -78,6 +79,20 @@ def load_user(user_id):
 
 
 # ======================
+# Decorador solo admin
+# ======================
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated or current_user.rol != "admin":
+            flash("Solo el administrador puede realizar esta acción", "danger")
+            return redirect(url_for("inicio"))
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
+# ======================
 # Funciones auxiliares
 # ======================
 def buscar_pelicula(id_str):
@@ -109,6 +124,8 @@ def leer_formulario_pelicula(datos=None):
     if estado not in ["Disponible", "Alquilada"]:
         abort(400, description="Estado no válido")
 
+    trailer = datos.get("trailer", "").strip()
+
     return {
         "nombre": datos.get("nombre").strip(),
         "genero": datos.get("genero").strip(),
@@ -117,20 +134,8 @@ def leer_formulario_pelicula(datos=None):
         "imagen": datos.get("imagen").strip(),
         "descripcion": datos.get("descripcion").strip(),
         "anio": anio,
+        "trailer": trailer,
     }
-
-
-def admin_required(f):
-    from functools import wraps
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.rol != "admin":
-            flash("Solo el administrador puede realizar esta acción", "danger")
-            return redirect(url_for("inicio"))
-        return f(*args, **kwargs)
-
-    return decorated_function
 
 
 # ======================
@@ -140,6 +145,12 @@ def admin_required(f):
 def inicio():
     lista = list(peliculas.find().sort("nombre", 1))
     return render_template("index.html", peliculas=lista)
+
+
+@app.route("/pelicula/<id>")
+def detalle_pelicula(id):
+    pelicula = buscar_pelicula(id)
+    return render_template("detalle.html", pelicula=pelicula)
 
 
 @app.route("/ayuda")
@@ -213,7 +224,7 @@ def logout():
 
 
 # ======================
-# CRUD de películas
+# CRUD de películas (solo admin)
 # ======================
 @app.route("/agregar", methods=["GET", "POST"])
 @login_required
@@ -273,7 +284,7 @@ def carrito():
 @app.route("/carrito/agregar/<id>")
 @login_required
 def carrito_agregar(id):
-    buscar_pelicula(id)  # valida que exista
+    buscar_pelicula(id)
     carrito = session.get("carrito", [])
     if id not in carrito:
         carrito.append(id)
@@ -295,7 +306,7 @@ def carrito_quitar(id):
     return redirect(url_for("carrito"))
 
 
-@app.route("/carrito/vaciar")
+@app.route("/carrito/vaciar", methods=["GET", "POST"])
 @login_required
 def carrito_vaciar():
     session.pop("carrito", None)
@@ -304,19 +315,40 @@ def carrito_vaciar():
 
 
 # ======================
-# Pedidos y cobro simulado
+# Checkout (pago simulado)
 # ======================
 @app.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
-    carrito_ids = session.get("carrito", {})
+    carrito_ids = session.get("carrito", [])
     if not carrito_ids:
         flash("El carrito está vacío", "warning")
         return redirect(url_for("carrito"))
 
+    if request.method == "GET":
+        items = []
+        total = 0.0
+        for pid in carrito_ids:
+            try:
+                p = peliculas.find_one({"_id": ObjectId(pid)})
+                if p and p.get("estado") == "Disponible":
+                    items.append(p)
+                    total += float(p.get("precio", 0))
+            except Exception:
+                continue
+        return render_template("checkout.html", items=items, total=total)
+
+    # POST → procesar pago
+    nombre_cliente = request.form.get("nombre_cliente", "").strip()
+    email_cliente = request.form.get("email_cliente", "").strip()
+    tarjeta = request.form.get("tarjeta", "").strip()
+
+    if not nombre_cliente or not email_cliente or not tarjeta:
+        flash("Completa todos los datos de pago", "danger")
+        return redirect(url_for("checkout"))
+
     items = []
     total = 0.0
-
     for pid in carrito_ids:
         try:
             p = peliculas.find_one({"_id": ObjectId(pid)})
@@ -329,7 +361,6 @@ def checkout():
                     }
                 )
                 total += float(p.get("precio", 0))
-                # Marcar como alquilada
                 peliculas.update_one(
                     {"_id": p["_id"]}, {"$set": {"estado": "Alquilada"}}
                 )
@@ -340,21 +371,24 @@ def checkout():
         flash("No hay películas disponibles en el carrito", "warning")
         return redirect(url_for("carrito"))
 
-    # Crear el pedido
     pedido = {
         "usuario_id": current_user.id,
         "usuario_nombre": current_user.nombre,
+        "cliente_nombre": nombre_cliente,
+        "cliente_email": email_cliente,
+        "tarjeta_ultimos4": tarjeta[-4:] if len(tarjeta) >= 4 else tarjeta,
         "items": items,
         "total": total,
         "estado": "Completado",
         "fecha": datetime.utcnow(),
     }
     pedidos.insert_one(pedido)
-
-    # Vaciar el carrito
     session.pop("carrito", None)
 
-    flash(f"¡Pedido realizado con éxito! Total: ${total:.2f}", "success")
+    flash(
+        f"¡Pago realizado con éxito! Se enviará la película al correo {email_cliente}",
+        "success",
+    )
     return redirect(url_for("mis_pedidos"))
 
 
@@ -365,56 +399,91 @@ def mis_pedidos():
         lista = list(pedidos.find({"usuario_id": current_user.id}).sort("fecha", -1))
     except Exception:
         lista = []
-
     return render_template("pedidos.html", pedidos=lista)
 
 
 # ======================
-# API (opcional)
+# API
 # ======================
 @app.route("/api/peliculas", methods=["GET", "POST"])
 def api_peliculas():
-    if request.method == "POST":
-        data = request.get_json()
-        result = peliculas.insert_one(data)
-        return jsonify({"id": str(result.inserted_id)}), 201
-    lista = peliculas.find().sort("nombre", 1)
-    resultado = []
-    for p in lista:
-        p["id"] = str(p["_id"])
-        resultado.append(
-            {
-                "id": p["id"],
-                "nombre": p.get("nombre"),
-                "genero": p.get("genero"),
-                "estado": p.get("estado"),
-                "precio": p.get("precio"),
-                "imagen": p.get("imagen"),
-                "anio": p.get("anio"),
-            }
-        )
-    return jsonify(resultado), 200
+    if request.method == "GET":
+        lista = peliculas.find().sort("nombre", 1)
+        resultado = []
+        for p in lista:
+            resultado.append(
+                {
+                    "id": str(p["_id"]),
+                    "nombre": p.get("nombre"),
+                    "genero": p.get("genero"),
+                    "estado": p.get("estado"),
+                    "precio": p.get("precio"),
+                    "imagen": p.get("imagen"),
+                    "anio": p.get("anio"),
+                    "trailer": p.get("trailer", ""),
+                }
+            )
+        return jsonify(resultado)
+
+    # POST - ESTO ES LO QUE TE FALTABA
+    datos = request.get_json()
+    nuevo = {
+        "nombre": datos.get("nombre"),
+        "genero": datos.get("categoria", "Drama"),
+        "estado": datos.get("estado", "Disponible"),
+        "precio": 65.0,
+        "imagen": "https://via.placeholder.com/300",
+    }
+    res = peliculas.insert_one(nuevo)
+    return jsonify({"id": str(res.inserted_id), "nombre": nuevo["nombre"]}), 201
 
 
 @app.route("/api/peliculas/<id>", methods=["GET", "PUT", "DELETE"])
 def api_pelicula_detalle(id):
-    from bson.objectid import ObjectId
+    from bson import ObjectId
 
+    oid = ObjectId(id)
     if request.method == "GET":
-        p = peliculas.find_one({"_id": ObjectId(id)})
-        if p:
-            p["id"] = str(p["_id"])
-            p["_id"] = str(p["_id"])
-            return jsonify(p), 200
-        return jsonify({"error": "no encontrado"}), 404
+        p = peliculas.find_one({"_id": oid})
+        return jsonify({"id": str(p["_id"]), "nombre": p["nombre"]})
+    if request.method == "PUT":
+        datos = request.get_json()
+        if "categoria" in datos:
+            datos["genero"] = datos.pop("categoria")
+        peliculas.update_one({"_id": oid}, {"$set": datos})
+        return jsonify({"ok": True})
+    if request.method == "DELETE":
+        peliculas.delete_one({"_id": oid})
+        return jsonify({"ok": True, "borrado": id})
 
-    elif request.method == "PUT":
-        data = request.get_json()
-        peliculas.update_one({"_id": ObjectId(id)}, {"$set": data})
-        return jsonify({"msg": "actualizado"}), 200
 
-    elif request.method == "DELETE":
-        resultado = peliculas.delete_one({"_id": ObjectId(id)})
-        if resultado.deleted_count == 0:
-            return jsonify({"error": "no encontrado"}), 404
-        return jsonify({"msg": "eliminado"}), 200
+# ======================
+# Manejo de errores
+# ======================
+@app.errorhandler(PyMongoError)
+def error_mongo(error):
+    mensaje = "No fue posible conectar con la base de datos."
+    if request.path.startswith("/api/"):
+        return jsonify({"error": mensaje}), 503
+    return render_template("error.html", mensaje=mensaje), 503
+
+
+@app.errorhandler(400)
+@app.errorhandler(404)
+@app.errorhandler(405)
+def error_peticion(error):
+    if request.path.startswith("/api/"):
+        return jsonify({"error": getattr(error, "description", str(error))}), error.code
+    return (
+        render_template(
+            "error.html", mensaje=getattr(error, "description", str(error))
+        ),
+        error.code,
+    )
+
+
+# ======================
+# Arranque
+# ======================
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=5000, debug=True)
