@@ -22,7 +22,9 @@ from pymongo.errors import PyMongoError
 from bson.objectid import ObjectId
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from pymongo import ReturnDocument
+import uuid
 import os
 
 app = Flask(__name__)
@@ -54,6 +56,7 @@ base_datos = cliente["cinerenta"]
 peliculas = base_datos["peliculas"]
 usuarios = base_datos["usuarios"]
 pedidos = base_datos["pedidos"]
+reservas = base_datos["reservas"]
 
 
 # ======================
@@ -108,12 +111,10 @@ def buscar_pelicula(id_str):
 def leer_formulario_pelicula(datos=None):
     if datos is None:
         datos = request.form
-
     campos = ("nombre", "genero", "estado", "precio", "imagen", "descripcion", "anio")
     for c in campos:
         if c not in datos or not str(datos.get(c, "")).strip():
             abort(400, description=f"Completa el campo: {c}")
-
     try:
         precio = float(datos.get("precio"))
         anio = int(datos.get("anio"))
@@ -121,11 +122,11 @@ def leer_formulario_pelicula(datos=None):
         abort(400, description="Precio y año deben ser números válidos")
 
     estado = datos.get("estado").strip()
-    if estado not in ["Disponible", "Alquilada"]:
+    # CORREGIDO: Permitir los 3 estados
+    if estado not in ["Disponible", "Reservado", "Alquilada"]:
         abort(400, description="Estado no válido")
 
     trailer = datos.get("trailer", "").strip()
-
     return {
         "nombre": datos.get("nombre").strip(),
         "genero": datos.get("genero").strip(),
@@ -138,11 +139,36 @@ def leer_formulario_pelicula(datos=None):
     }
 
 
+DURACION_RESERVA_MINUTOS = 5
+
+
+def ahora_utc():
+    return datetime.now(timezone.utc)
+
+
+def obtener_reserva_id():
+    if not session.get("reserva_id"):
+        session["reserva_id"] = uuid.uuid4().hex
+    return session["reserva_id"]
+
+
+def liberar_reservas_vencidas():
+    ahora = ahora_utc()
+    peliculas.update_many(
+        {"estado": "Reservado", "vence_en": {"$lte": ahora}},
+        {
+            "$set": {"estado": "Disponible"},
+            "$unset": {"reserva_id": "", "vence_en": ""},
+        },
+    )
+
+
 # ======================
 # Rutas públicas
 # ======================
 @app.route("/")
 def inicio():
+    liberar_reservas_vencidas()
     lista = list(peliculas.find().sort("nombre", 1))
     return render_template("index.html", peliculas=lista)
 
@@ -267,6 +293,7 @@ def eliminar(id):
 @app.route("/carrito")
 @login_required
 def carrito():
+    liberar_reservas_vencidas()
     carrito_ids = session.get("carrito", [])
     items = []
     total = 0
@@ -284,20 +311,80 @@ def carrito():
 @app.route("/carrito/agregar/<id>")
 @login_required
 def carrito_agregar(id):
-    buscar_pelicula(id)
+    liberar_reservas_vencidas()
+    pelicula = buscar_pelicula(id)
+
+    print(
+        f"DEBUG: Intentando reservar {pelicula['nombre']} - Estado actual: {pelicula.get('estado')}"
+    )
+
+    if pelicula.get("estado") != "Disponible":
+        flash("Otro usuario ya reservó esta película", "danger")
+        print("DEBUG: Si debería salir el mensaje")
+        return redirect(url_for("inicio"))
+
+    rid = obtener_reserva_id()
+    resultado = peliculas.update_one(
+        {"_id": pelicula["_id"], "estado": "Disponible"},
+        {
+            "$set": {
+                "estado": "Reservado",
+                "reserva_id": rid,
+                "vence_en": ahora_utc() + timedelta(minutes=DURACION_RESERVA_MINUTOS),
+            }
+        },
+    )
+
+    if resultado.modified_count == 0:
+        flash("Otro usuario ya reservó esta película", "danger")
+        return redirect(url_for("inicio"))
+
     carrito = session.get("carrito", [])
     if id not in carrito:
         carrito.append(id)
         session["carrito"] = carrito
-        flash("Película agregada al carrito", "success")
-    else:
-        flash("Ya está en el carrito", "info")
-    return redirect(url_for("inicio"))
+
+    flash(f"Película reservada por {DURACION_RESERVA_MINUTOS} minutos", "success")
+    return redirect(url_for("carrito"))
+
+
+@app.route("/carrito/cancelar/<id>")
+@login_required
+def carrito_cancelar(id):
+    pelicula = buscar_pelicula(id)
+    rid = obtener_reserva_id()
+    if pelicula.get("reserva_id") != rid:
+        flash("No puedes cancelar esta reserva", "danger")
+        return redirect(url_for("carrito"))
+    peliculas.update_one(
+        {"_id": pelicula["_id"]},
+        {
+            "$set": {"estado": "Disponible"},
+            "$unset": {"reserva_id": "", "vence_en": ""},
+        },
+    )
+    carrito = session.get("carrito", [])
+    if id in carrito:
+        carrito.remove(id)
+        session["carrito"] = carrito
+    flash("Reserva cancelada. La película vuelve a estar disponible", "info")
+    return redirect(url_for("carrito"))
 
 
 @app.route("/carrito/quitar/<id>")
 @login_required
 def carrito_quitar(id):
+    pelicula = buscar_pelicula(id)
+    rid = obtener_reserva_id()
+    # CORREGIDO: Si la quitas, libérala
+    if pelicula.get("reserva_id") == rid:
+        peliculas.update_one(
+            {"_id": pelicula["_id"]},
+            {
+                "$set": {"estado": "Disponible"},
+                "$unset": {"reserva_id": "", "vence_en": ""},
+            },
+        )
     carrito = session.get("carrito", [])
     if id in carrito:
         carrito.remove(id)
@@ -309,6 +396,15 @@ def carrito_quitar(id):
 @app.route("/carrito/vaciar", methods=["GET", "POST"])
 @login_required
 def carrito_vaciar():
+    rid = obtener_reserva_id()
+    # CORREGIDO: Vaciar libera todas tus reservas
+    peliculas.update_many(
+        {"reserva_id": rid},
+        {
+            "$set": {"estado": "Disponible"},
+            "$unset": {"reserva_id": "", "vence_en": ""},
+        },
+    )
     session.pop("carrito", None)
     flash("Carrito vaciado", "info")
     return redirect(url_for("carrito"))
@@ -320,10 +416,13 @@ def carrito_vaciar():
 @app.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
+    liberar_reservas_vencidas()
     carrito_ids = session.get("carrito", [])
     if not carrito_ids:
         flash("El carrito está vacío", "warning")
         return redirect(url_for("carrito"))
+
+    rid = obtener_reserva_id()
 
     if request.method == "GET":
         items = []
@@ -331,14 +430,15 @@ def checkout():
         for pid in carrito_ids:
             try:
                 p = peliculas.find_one({"_id": ObjectId(pid)})
-                if p and p.get("estado") == "Disponible":
+                # CORREGIDO: Buscar tus reservas, no Disponible
+                if p and p.get("reserva_id") == rid:
                     items.append(p)
                     total += float(p.get("precio", 0))
             except Exception:
                 continue
         return render_template("checkout.html", items=items, total=total)
 
-    # POST → procesar pago
+    # POST
     nombre_cliente = request.form.get("nombre_cliente", "").strip()
     email_cliente = request.form.get("email_cliente", "").strip()
     tarjeta = request.form.get("tarjeta", "").strip()
@@ -347,13 +447,13 @@ def checkout():
         flash("Completa todos los datos de pago", "danger")
         return redirect(url_for("checkout"))
 
-    items = []
+    items_pedido = []
     total = 0.0
     for pid in carrito_ids:
         try:
             p = peliculas.find_one({"_id": ObjectId(pid)})
-            if p and p.get("estado") == "Disponible":
-                items.append(
+            if p and p.get("reserva_id") == rid:
+                items_pedido.append(
                     {
                         "pelicula_id": str(p["_id"]),
                         "nombre": p.get("nombre", ""),
@@ -362,13 +462,17 @@ def checkout():
                 )
                 total += float(p.get("precio", 0))
                 peliculas.update_one(
-                    {"_id": p["_id"]}, {"$set": {"estado": "Alquilada"}}
+                    {"_id": p["_id"]},
+                    {
+                        "$set": {"estado": "Alquilada"},
+                        "$unset": {"reserva_id": "", "vence_en": ""},
+                    },
                 )
         except Exception:
             continue
 
-    if not items:
-        flash("No hay películas disponibles en el carrito", "warning")
+    if not items_pedido:
+        flash("Tus reservas vencieron, vuelve a agregarlas", "warning")
         return redirect(url_for("carrito"))
 
     pedido = {
@@ -377,18 +481,14 @@ def checkout():
         "cliente_nombre": nombre_cliente,
         "cliente_email": email_cliente,
         "tarjeta_ultimos4": tarjeta[-4:] if len(tarjeta) >= 4 else tarjeta,
-        "items": items,
+        "items": items_pedido,
         "total": total,
         "estado": "Completado",
         "fecha": datetime.utcnow(),
     }
     pedidos.insert_one(pedido)
     session.pop("carrito", None)
-
-    flash(
-        f"¡Pago realizado con éxito! Se enviará la película al correo {email_cliente}",
-        "success",
-    )
+    flash(f"¡Pago realizado con éxito! Se enviará al correo {email_cliente}", "success")
     return redirect(url_for("mis_pedidos"))
 
 
@@ -480,6 +580,12 @@ def error_peticion(error):
         ),
         error.code,
     )
+
+
+@app.route("/probar-mensaje")
+def probar_mensaje():
+    flash("Otro usuario ya reservó esta película", "danger")
+    return redirect(url_for("inicio"))
 
 
 # ======================
