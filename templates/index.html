@@ -27,26 +27,29 @@
                 </p>
                 {% if p.descripcion %}
                 <p class="card-text small text-white-50 mb-2" style="font-size: 0.85rem;">
-                    {{ p.descripcion[:90]}}{%if p.descripcion|length> 90 %}...{% endif %}
+                    {{ p.descripcion[:90] }}{% if p.descripcion|length > 90 %}...{% endif %}
                 </p>
                 {% endif %}
-                
+
                 <p class="fw-bold text-danger fs-5 mb-2">${{ "%.2f"|format(p.get('precio', 0)) }}</p>
-                
-                <span class="badge mb-3 
-                    {% if p.estado == 'Disponible' %}bg-success{% else %}bg-secondary{% endif %}">
-                    {{ p.estado }}
-                </span>
+
+                {% if p.estado == 'Disponible' %}
+                    <span class="badge bg-success mb-3">Disponible</span>
+                {% elif p.estado == 'Reservado' %}
+                    <span class="badge bg-warning text-dark mb-3">Reservado</span>
+                {% else %}
+                    <span class="badge bg-secondary mb-3">Alquilada</span>
+                {% endif %}
 
                 <div class="mt-auto d-grid gap-2">
                     {% if current_user.is_authenticated and p.estado == 'Disponible' %}
-                        <a href="{{ url_for('carrito_agregar', id=p._id) }}" class="btn btn-cine btn-sm">
-                            Agregar al carrito
-                        </a>
+                        <a href="{{ url_for('carrito_agregar', id=p._id) }}" class="btn btn-cine btn-sm">Reservar</a>
+                    {% elif p.estado == 'Reservado' %}
+                        <button class="btn btn-warning btn-sm" disabled>Reservado</button>
                     {% endif %}
-                    
+
                     {% if current_user.is_authenticated and current_user.rol == "admin" %}
-                    <div class="btn-group btn-group-sm mt-2">
+                    <div class="btn-group btn-group-sm">
                         <a href="{{ url_for('editar', id=p._id) }}" class="btn btn-outline-light">Editar</a>
                         <form action="{{ url_for('eliminar', id=p._id) }}" method="post" class="d-inline"
                               onsubmit="return confirm('¿Eliminar esta película?');">
@@ -64,7 +67,7 @@
     <div class="text-center py-5">
         <h3 class="text-secondary">Todavía no hay películas</h3>
         <p class="text-secondary">Agrega la primera película al catálogo.</p>
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated and current_user.rol == "admin" %}
             <a href="{{ url_for('agregar') }}" class="btn btn-cine mt-3">Agregar película</a>
         {% endif %}
     </div>

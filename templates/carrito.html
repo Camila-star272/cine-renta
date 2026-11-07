@@ -11,7 +11,8 @@
             <tr>
                 <th>Película</th>
                 <th>Precio</th>
-                <th></th>
+                <th>Reserva</th>
+                <th class="text-end">Acción</th>
             </tr>
         </thead>
         <tbody>
@@ -19,26 +20,35 @@
             <tr>
                 <td>
                     <div class="d-flex align-items-center gap-3">
-                        <img src="{{ item.imagen }}" alt="" width="60" height="90" style="object-fit: cover;"
+                        <img src="{{ item.imagen }}" alt="" width="60" height="90" style="object-fit: cover; border-radius: 4px;"
                              onerror="this.src='https://via.placeholder.com/60x90'">
                         <div>
-                            <strong>{{ item.nombre }}</strong><br>
-                            <small class="text-secondary">{{ item.genero }}</small>
+                            <strong class="text-white">{{ item.nombre }}</strong><br>
+                            <small class="text-secondary">{{ item.genero }} · {{ item.anio }}</small><br>
+                            {% if item.vence_en %}
+                            <small class="text-warning">Vence: {{ item.vence_en.strftime('%H:%M:%S') }} UTC</small>
+                            {% endif %}
                         </div>
                     </div>
                 </td>
                 <td class="text-danger fw-bold">${{ "%.2f"|format(item.get('precio',0)) }}</td>
                 <td>
-                    <a href="{{ url_for('carrito_quitar', id=item._id) }}" class="btn btn-sm btn-outline-danger">Quitar</a>
+                    <span class="badge bg-warning text-dark">Reservado por 5 min</span>
+                </td>
+                <td class="text-end">
+                    <a href="{{ url_for('carrito_cancelar', id=item._id) }}" 
+                       class="btn btn-sm btn-outline-warning">
+                       Cancelar reserva
+                    </a>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
         <tfoot>
-            <tr>
+            <tr class="table-active">
                 <td class="text-end fw-bold">Total:</td>
-                <td class="text-danger fs-4 fw-bold">${{ "%.2f"|format(total) }}</td>
-                <td></td>
+                <td class="text-danger fs-5 fw-bold">${{ "%.2f"|format(total) }}</td>
+                <td colspan="2"></td>
             </tr>
         </tfoot>
     </table>
@@ -51,6 +61,7 @@
 {% else %}
     <div class="text-center py-5">
         <h3 class="text-secondary">Tu carrito está vacío</h3>
+        <p class="text-white-50">Agrega películas y se reservarán por 5 minutos.</p>
         <a href="{{ url_for('inicio') }}" class="btn btn-cine mt-3">Ver catálogo</a>
     </div>
 {% endif %}
