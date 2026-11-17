@@ -34,20 +34,27 @@
                 <p class="fw-bold text-danger fs-5 mb-2">${{ "%.2f"|format(p.get('precio', 0)) }}</p>
 
                 {% if p.estado == 'Disponible' %}
-                    <span class="badge bg-success mb-3">Disponible</span>
-                {% elif p.estado == 'Reservado' %}
-                    <span class="badge bg-warning text-dark mb-3">Reservado</span>
-                {% else %}
-                    <span class="badge bg-secondary mb-3">Alquilada</span>
-                {% endif %}
-
-                <div class="mt-auto d-grid gap-2">
-                    {% if current_user.is_authenticated and p.estado == 'Disponible' %}
-                        <a href="{{ url_for('carrito_agregar', id=p._id) }}" class="btn btn-cine btn-sm">Reservar</a>
-                    {% elif p.estado == 'Reservado' %}
-                        <button class="btn btn-warning btn-sm" disabled>Reservado</button>
+                    <span class="badge bg-success mb-2">Disponible</span>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('carrito_agregar', id=p._id) }}" class="btn btn-cine btn-sm">
+                            Reservar
+                        </a>
                     {% endif %}
 
+                {% elif p.estado == 'Reservado' %}
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('carrito_agregar', id=p._id) }}"
+                           class="btn btn-warning btn-sm text-dark w-100 mb-2">
+                            Reservado
+                        </a>
+                    {% else %}
+                        <span class="badge bg-warning text-dark mb-2">Reservado</span>
+                    {% endif %}
+
+                {% else %}
+                    <span class="badge bg-secondary mb-2">Alquilada</span>
+                {% endif %}
+                
                     {% if current_user.is_authenticated and current_user.rol == "admin" %}
                     <div class="btn-group btn-group-sm">
                         <a href="{{ url_for('editar', id=p._id) }}" class="btn btn-outline-light">Editar</a>
@@ -59,7 +66,6 @@
                     {% endif %}
                 </div>
             </div>
-        </div>
     </div>
     {% endfor %}
 </div>

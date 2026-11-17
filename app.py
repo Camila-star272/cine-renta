@@ -314,10 +314,6 @@ def carrito_agregar(id):
     liberar_reservas_vencidas()
     pelicula = buscar_pelicula(id)
 
-    print(
-        f"DEBUG: Intentando reservar {pelicula['nombre']} - Estado actual: {pelicula.get('estado')}"
-    )
-
     if pelicula.get("estado") != "Disponible":
         flash("Otro usuario ya reservó esta película", "danger")
         print("DEBUG: Si debería salir el mensaje")
